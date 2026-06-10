@@ -205,8 +205,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   max-width: 90vw; text-align: center;
 }
 .sauna-row { display: flex; align-items: center; gap: 10px; background: var(--accent-soft); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 12px; }
-.sheet-back { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40; display: flex; align-items: flex-end; }
-.sheet { background: var(--bg-card); border-radius: 18px 18px 0 0; width: 100%; max-width: 520px; margin: 0 auto; padding: 18px 16px calc(18px + var(--safe-bottom)); max-height: 75dvh; overflow-y: auto; animation: slideup 0.2s ease; }
+.sheet-back {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 40;
+  display: flex; align-items: flex-end;
+  /* Backdrop touches must not scroll the page underneath */
+  touch-action: none; overscroll-behavior: contain;
+}
+.sheet {
+  background: var(--bg-card); border-radius: 18px 18px 0 0; width: 100%; max-width: 520px;
+  margin: 0 auto; padding: 18px 16px calc(18px + var(--safe-bottom)); max-height: 75dvh;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* The sheet scrolls itself; never hand the gesture to the screen behind */
+  touch-action: pan-y; overscroll-behavior: contain;
+  animation: slideup 0.2s ease;
+}
 @keyframes slideup { from { transform: translateY(40px); opacity: 0.5; } to { transform: none; opacity: 1; } }
 .sheet-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; }
 .swap-option { display: block; width: 100%; text-align: left; padding: 13px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-raised); margin-bottom: 8px; }
