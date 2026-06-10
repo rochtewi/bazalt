@@ -114,7 +114,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     }
     await completeDay(finished)
     await load()
-    showToast(day.deload ? 'Deload logged — recovery banked 😴' : 'Workout logged. Targets updated for next time 💪')
+    showToast(day.deload ? 'Deload logged.' : 'Logged. Next targets set.')
   }
 
   async function onPush() {
@@ -140,7 +140,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
 
   return (
     <div className="screen">
-      <div className="screen-title">Hey {profile.name} 👋</div>
+      <div className="screen-title">Today</div>
       <div className="screen-sub">{prettyToday()}</div>
 
       <div className="card-hero">
@@ -151,8 +151,8 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
           {day.status === 'completed' && <span className="pill pill-green">✓ Completed</span>}
           {day.status === 'skipped' && <span className="pill pill-red">Skipped</span>}
           {pending && !isRest && <span className="pill pill-dim">{doneBlocks}/{day.blocks.length} exercises</span>}
-          {day.deload && <span className="pill pill-dim">😴 Deload week</span>}
-          {day.sauna && hasSauna() && <span className="pill pill-accent">🔥 Sauna {profile.saunaMinutes} min</span>}
+          {day.deload && <span className="pill pill-dim">Deload week</span>}
+          {day.sauna && hasSauna() && <span className="pill pill-accent">Sauna · {profile.saunaMinutes} min</span>}
         </div>
       </div>
 

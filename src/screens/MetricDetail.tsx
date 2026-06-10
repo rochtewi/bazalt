@@ -80,7 +80,7 @@ export default function MetricDetail({
   return (
     <div className="sheet-back" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-title">{meta.icon} {meta.title}</div>
+        <div className="sheet-title">{meta.title}</div>
         <div className="card" style={{ marginBottom: 12 }}>
           {rows.map((r) => (
             <div className="row" key={r.label} style={{ padding: '7px 0' }}>

@@ -101,7 +101,7 @@ export default function TimerOverlay({ block, onDone, onClose }: { block: Workou
     <div className="timer-back">
       <div className="timer-card">
         <div className="timer-label" style={{ color }}>
-          {finished ? 'DONE 💪' : phase.label}
+          {finished ? 'DONE' : phase.label}
         </div>
         <svg viewBox="0 0 200 200" className="timer-ring">
           <circle cx="100" cy="100" r={R} fill="none" stroke="var(--border)" strokeWidth="10" />

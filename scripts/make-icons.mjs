@@ -21,8 +21,8 @@ for (const t of targets) {
 // Maskable: same art with safe-zone padding on a solid background.
 await sharp(src)
   .resize(410, 410)
-  .extend({ top: 51, bottom: 51, left: 51, right: 51, background: '#0c0e12' })
-  .flatten({ background: '#0c0e12' })
+  .extend({ top: 51, bottom: 51, left: 51, right: 51, background: '#0d0e11' })
+  .flatten({ background: '#0d0e11' })
   .png()
   .toFile(join(out, 'icon-maskable-512.png'))
 

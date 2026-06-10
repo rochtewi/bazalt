@@ -62,7 +62,7 @@ export async function buildICS(profile: Profile): Promise<string> {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Forge//Home Workouts//EN',
+    'PRODID:-//bazalt//Training//EN',
     'CALSCALE:GREGORIAN',
   ]
   for (const d of days) {
@@ -75,7 +75,7 @@ export async function buildICS(profile: Profile): Promise<string> {
       `DTSTAMP:${dt}T000000`,
       `DTSTART:${dt}T${hour}0000`,
       `DTEND:${dt}T${hour}3000`,
-      `SUMMARY:${icsEscape(`Forge: ${summary}`)}`,
+      `SUMMARY:${icsEscape(`bazalt: ${summary}`)}`,
       `DESCRIPTION:${icsEscape(d.focus)}`,
       'BEGIN:VALARM',
       'ACTION:DISPLAY',
@@ -94,7 +94,7 @@ export function downloadICS(content: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'forge-workouts.ics'
+  a.download = 'bazalt-training.ics'
   a.click()
   URL.revokeObjectURL(url)
 }

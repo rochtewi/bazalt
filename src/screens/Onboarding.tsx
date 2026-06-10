@@ -42,11 +42,10 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
     <div className="app-shell">
       <div className="screen">
         <div className="card-hero" style={{ marginTop: 24 }}>
-          <div className="eyebrow">Welcome to Forge</div>
-          <div className="hero-title">Your home gym, planned.</div>
+          <div className="eyebrow">bazalt</div>
+          <div className="hero-title">Show up. Log it. Progress.</div>
           <div className="hero-sub">
-            Workouts built around your equipment — barbell, bench, dip bars, pull-up bar, hills — with sauna
-            built into the week. Everything stays on this phone.
+            Training built around your equipment, one day at a time. Everything stays on this phone.
           </div>
         </div>
 
@@ -104,7 +103,7 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
         </div>
 
         <button className="btn btn-primary" disabled={!valid || saving} onClick={start}>
-          Build my program →
+          Build my program
         </button>
         <p className="tiny" style={{ textAlign: 'center', marginTop: 12 }}>
           No account, no cloud, no tracking — your data never leaves this device.

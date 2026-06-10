@@ -1,76 +1,60 @@
-# 🔥 Forge — Home Workouts
+# bazalt
 
-An **offline-first workout app** for iPhone, built around your actual home gym: barbells, EZ bar,
-adjustable bench with incline press rack, dip bars, pull-up bar, wind bike, hills outside — and a
-dry sauna woven into the weekly schedule.
+An offline-first training app for iPhone. No server, no account, no analytics — your profile,
+weight history, and every logged set live in your phone's local database and never leave the
+device. Show up, log it, progress.
 
-**Privacy by design:** there is no server, no account, and no analytics. Your profile, weight
-history, and every logged set live in your phone's local database (IndexedDB) and never leave the
-device. The only network traffic after install is a one-way daily reminder push *to* your phone.
+Named for basalt: stone forged in fire, cooled into something harder.
 
 ## What it does
 
 - **6-day program** (or 5 in Settings): Push A · Pull A · Legs A · Sprint Day · Push B · Pull B · Rest
-- **Sauna scheduling** — 4 sauna sessions a week land on the heavier days, tracked like the workouts
-- **Workout of the day** with per-set logging (weight × reps), exercise cues, and quick check-off
+- **A core slot every training day**, with a ~30-movement ab library (mat, bar, and weighted)
+- **Workout of the day** with per-set logging, exercise cues, and quick check-off
 - **Push / Skip / Complete** — push moves today (and everything after it) one day later; skip keeps
   the rest of the week on plan
 - **Skip or swap any single exercise** — swaps suggest same-movement-pattern alternatives that your
   equipment supports
 - **Automatic progression** — hit the top of the rep range on every set and the next session's
-  target weight goes up (double progression); bodyweight moves chase reps; sprints add rounds
-- **Calendar** month view with done/planned/skipped markers
-- **Progress** — streak, totals, body-weight chart, per-lift strength chart
+  target weight rises (double progression); bodyweight moves chase reps; sprints add rounds
+- **Equipment manager** — check off gear you own to unlock matching exercises; create custom ones
+- **Custom workouts** — build your own (Murph, Ab Ripper, and other presets included) and place
+  them on any calendar day, inserting or replacing that day's plan
+- **Activity logging in real units** — runs in miles, hikes/swims/gardening in minutes
+- **Timers** — tap any timed or interval exercise for a five-second lead-in and a live countdown;
+  sprint blocks cycle work/rest rounds automatically
+- **Calories burned & total weight moved** — MET-based estimates with week-over-week deltas; every
+  Progress card opens weekly/monthly/lifetime breakdowns
+- **Deload weeks** — every 6th week automatically lightens the load
+- **Optional dry sauna scheduling** — modeled as equipment; without it, no sauna features appear
 - **Daily notification** sent by this repository's own GitHub Action (free, no third party)
 - **Calendar export (.ics)** as a fully offline reminder fallback
-- **Equipment manager** — check off gear you own to unlock matching exercises; create custom exercises
-- **Custom workouts** — build your own (Murph and other presets included) and place them on any
-  calendar day, either inserting (schedule shifts) or replacing that day's plan
-- **Activity logging with real units** — runs in miles, gardening/hikes/swims in minutes
-- **Workout timers** — tap any timed or interval exercise for a 5-second lead-in and a live
-  countdown; sprint blocks cycle work/rest rounds automatically with audio cues
-- **Calories burned & total weight moved** — MET-based estimates with week-over-week deltas; every
-  Progress card taps through to weekly/monthly/lifetime breakdowns
-- **Deload weeks** — every 6th week automatically lightens the load to bank recovery
 
 ## Install on your iPhone (one time, ~2 minutes)
 
-1. On your iPhone, open **Safari** and go to your GitHub Pages URL
-   (`https://<your-username>.github.io/forge-workouts/`).
-2. Tap the **Share** button → **Add to Home Screen** → **Add**.
-3. Launch **Forge from the home-screen icon** (this matters — notifications only work for
-   home-screen apps on iOS).
-4. Complete the welcome setup. Done — the app now works with zero internet connection.
+1. In **Safari**, open `https://rochtewi.github.io/bazalt/`
+2. Tap **Share → Add to Home Screen → Add** (keep "Open as Web App" on)
+3. Launch **bazalt from the home-screen icon** — notifications only work for home-screen apps on iOS
+4. Complete the welcome setup. From then on it works with zero internet.
 
 ## Turn on the daily notification (one time per phone)
 
-1. In the app: **Profile → Enable notifications** → allow.
-2. Tap **Copy subscription**.
-3. On GitHub: your repo → **Settings → Secrets and variables → Actions → New repository secret**.
-   Name it `PUSH_SUBSCRIPTION`, paste, save.
-4. Test it: repo → **Actions → Daily Workout Notification → Run workflow**. Your phone should buzz.
+1. In the app: **Profile → Enable notifications** → allow
+2. Tap **Copy subscription**
+3. On GitHub: repo → **Settings → Secrets and variables → Actions → New repository secret** named
+   `PUSH_SUBSCRIPTION`, paste, save
+4. Test: repo → **Actions → Daily Workout Notification → Run workflow**
 
-**Multiple phones** (family, friends using the same app): the secret accepts a JSON list — wrap the
-subscriptions in square brackets, separated by commas:
-
-```json
-[ {"endpoint":"...phone 1..."}, {"endpoint":"...phone 2..."} ]
-```
-
-Each phone gets the daily push. An expired phone never blocks the others.
+**Multiple phones**: the secret accepts a JSON list — wrap subscriptions in square brackets,
+separated by commas. Each phone gets the daily push; an expired phone never blocks the others.
 
 The send time is set in [.github/workflows/notify.yml](.github/workflows/notify.yml) (cron, UTC).
 Default is 11:00 UTC ≈ 7:00 AM Eastern.
 
-> Prefer zero-cloud reminders? **Profile → Export 4-week calendar (.ics)** adds native Apple
-> Calendar alerts instead.
-
 ## How auto-building works
 
-Every push to `main` triggers GitHub Actions to type-check, build, and deploy the app to GitHub
-Pages. Your installed app picks the update up automatically the next time it's opened with a
-connection — no reinstall, and your data is untouched (it lives in the phone's database, not in
-the app files).
+Every push to `main` triggers GitHub Actions to type-check, build, and deploy to GitHub Pages.
+Installed apps pick the update up automatically on next open — no reinstall, data untouched.
 
 ## Development
 
@@ -87,5 +71,5 @@ node scripts/make-icons.mjs   # regenerate app icons from scripts/icon.svg
 - Strict Content-Security-Policy (no third-party scripts, no inline JS, no frames).
 - The web-push VAPID **private** key exists only as an encrypted GitHub Actions secret
   (`VAPID_PRIVATE_KEY`); the code ships only the public half.
-- The push subscription endpoint is also stored only as a secret, and pushes are one-way —
-  nothing about your workouts or body data is ever transmitted.
+- Push subscriptions are stored only as secrets, and pushes are one-way — nothing about your
+  workouts or body data is ever transmitted.

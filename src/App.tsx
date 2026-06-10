@@ -11,11 +11,11 @@ import SettingsScreen from './screens/Settings'
 
 type Tab = 'today' | 'calendar' | 'progress' | 'settings'
 
-const TABS: { id: Tab; label: string; ico: string }[] = [
-  { id: 'today', label: 'Today', ico: '🔥' },
-  { id: 'calendar', label: 'Calendar', ico: '📅' },
-  { id: 'progress', label: 'Progress', ico: '📈' },
-  { id: 'settings', label: 'Profile', ico: '👤' },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'progress', label: 'Progress' },
+  { id: 'settings', label: 'Profile' },
 ]
 
 export default function App() {
@@ -52,7 +52,6 @@ export default function App() {
       <nav className="tabbar">
         {TABS.map((t) => (
           <button key={t.id} className={`tab ${tab === t.id ? 'on' : ''}`} onClick={() => setTab(t.id)}>
-            <span className="ico">{t.ico}</span>
             {t.label}
           </button>
         ))}

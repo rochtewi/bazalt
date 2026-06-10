@@ -126,7 +126,7 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
             ) : (
               <>
                 <p className="muted" style={{ marginBottom: 8 }}>
-                  ✅ Enabled on this phone. Final step: copy this subscription into the
+                  Enabled on this phone. Final step: copy this subscription into the
                   <b> PUSH_SUBSCRIPTION</b> secret in the GitHub repository (Settings → Secrets → Actions).
                   The secret can hold a JSON list — one entry per phone that wants the daily push.
                 </p>
@@ -150,7 +150,7 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
       <div className="card">
         <div style={{ fontWeight: 800, marginBottom: 6 }}>Privacy & security</div>
         <p className="tiny">
-          Forge has no server, no account, and no analytics. Workouts, weight history, and your profile live in
+          bazalt has no server, no account, and no analytics. Workouts, weight history, and your profile live in
           this device's local database only. Deleting the app deletes the data.
         </p>
         <div className="divider" />

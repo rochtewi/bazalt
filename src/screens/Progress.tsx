@@ -76,16 +76,16 @@ export default function ProgressScreen({ profile }: { profile: Profile }) {
       <div className="stat-grid">
         <button className="stat" onClick={() => setDetail('streak')}>
           <div className="stat-num">{metrics?.streak ?? 0}</div>
-          <div className="stat-label">⚡ day streak</div>
+          <div className="stat-label">day streak</div>
         </button>
         <button className="stat" onClick={() => setDetail('workouts')}>
           <div className="stat-num">{metrics?.completed ?? 0}</div>
-          <div className="stat-label">✅ workouts done</div>
+          <div className="stat-label">workouts done</div>
         </button>
         <button className="stat" onClick={() => setDetail('calories')}>
           <div className="stat-num">{cal ? fmtNum(cal.thisWeek) : 0}</div>
           <div className="stat-label">
-            🔥 kcal this week{' '}
+            kcal this week{' '}
             {cal && cal.lastWeek > 0 && (
               <span className={calDelta >= 0 ? 'delta-up' : 'delta-down'}>
                 {calDelta >= 0 ? '▲' : '▼'}{fmtNum(Math.abs(calDelta))}
@@ -96,7 +96,7 @@ export default function ProgressScreen({ profile }: { profile: Profile }) {
         <button className="stat" onClick={() => setDetail('volume')}>
           <div className="stat-num">{vol ? fmtNum(vol.thisWeek) : 0}</div>
           <div className="stat-label">
-            🏋️ {profile.unit} moved this wk{' '}
+            {profile.unit} moved this wk{' '}
             {vol && vol.lastWeek > 0 && (
               <span className={volDelta >= 0 ? 'delta-up' : 'delta-down'}>
                 {volDelta >= 0 ? '▲' : '▼'}{fmtNum(Math.abs(volDelta))}
@@ -107,12 +107,12 @@ export default function ProgressScreen({ profile }: { profile: Profile }) {
         {hasSauna() && (
           <button className="stat" onClick={() => setDetail('sauna')}>
             <div className="stat-num">{metrics?.sauna.length ?? 0}</div>
-            <div className="stat-label">🧖 sauna sessions</div>
+            <div className="stat-label">sauna sessions</div>
           </button>
         )}
         <button className="stat" onClick={() => setDetail('bodyweight')}>
           <div className="stat-num">{latestWeight ?? '—'}</div>
-          <div className="stat-label">⚖️ body weight ({profile.unit})</div>
+          <div className="stat-label">body weight ({profile.unit})</div>
         </button>
       </div>
 

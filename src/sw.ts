@@ -12,8 +12,8 @@ self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim(
 
 // Daily reminder pushed by the GitHub Actions cron job.
 self.addEventListener('push', (event) => {
-  let title = 'Forge'
-  let body = 'Your workout is ready. Open Forge to see today’s plan.'
+  let title = 'bazalt'
+  let body = 'Today’s work is set.'
   try {
     const data = event.data?.json()
     if (data?.title) title = data.title

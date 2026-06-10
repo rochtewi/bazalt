@@ -1,15 +1,15 @@
-/* Forge design system — dark ember theme */
+/* bazalt design system — matte stone, one quiet amber accent */
 :root {
-  --bg: #0c0e12;
-  --bg-raised: #14171e;
-  --bg-card: #181c25;
-  --bg-input: #1f242f;
-  --border: #2a303d;
-  --text: #eef1f6;
-  --text-dim: #9aa3b2;
-  --text-faint: #6b7280;
-  --accent: #ff7a45;
-  --accent-soft: rgba(255, 122, 69, 0.14);
+  --bg: #0d0e11;
+  --bg-raised: #15171c;
+  --bg-card: #191b21;
+  --bg-input: #20232a;
+  --border: #2b2e35;
+  --text: #edeff2;
+  --text-dim: #9b9fa8;
+  --text-faint: #6a6e76;
+  --accent: #cf8a55;
+  --accent-soft: rgba(207, 138, 85, 0.13);
   --green: #4ade80;
   --green-soft: rgba(74, 222, 128, 0.14);
   --amber: #fbbf24;
@@ -155,9 +155,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: flex; justify-content: space-around;
   padding: 8px 8px calc(8px + var(--safe-bottom));
 }
-.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-faint); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 10px; }
-.tab.on { color: var(--accent); }
-.tab .ico { font-size: 21px; line-height: 1; }
+.tab {
+  color: var(--text-faint); font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 12px 14px; border-radius: 10px; border-top: 2px solid transparent;
+}
+.tab.on { color: var(--text); border-top-color: var(--accent); }
 
 /* ---- Calendar ---- */
 .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
