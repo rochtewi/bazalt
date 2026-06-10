@@ -33,10 +33,14 @@ html, body {
   overscroll-behavior-y: none;
 }
 
-#root { min-height: 100dvh; display: flex; flex-direction: column; }
+/* The page itself never scrolls — .screen scrolls internally. This keeps the
+   tab bar truly pinned on iOS, where position:fixed drifts during scroll in
+   installed PWAs. */
+#root { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
 .app-shell {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   max-width: 520px;
@@ -47,7 +51,10 @@ html, body {
 
 .screen {
   flex: 1;
-  padding: 16px 16px calc(86px + var(--safe-bottom));
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 28px;
   animation: fadein 0.18s ease;
 }
 @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -140,14 +147,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ---- Tab bar ---- */
 .tabbar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  flex-shrink: 0;
   background: rgba(16, 19, 25, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--border);
   display: flex; justify-content: space-around;
   padding: 8px 8px calc(8px + var(--safe-bottom));
-  max-width: 520px; margin: 0 auto;
 }
 .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-faint); font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 10px; }
 .tab.on { color: var(--accent); }
