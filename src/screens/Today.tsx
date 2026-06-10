@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { today } from '../db'
 import { completeDay, getDay, pushDay, refreshTargets, skipDay, swapBlock } from '../engine/scheduler'
 import { defFor, hasSauna, swapsFor } from '../data/library'
-import { useToast } from '../components/useToast'
+import { Toast, useToast } from '../components/useToast'
 import TimerOverlay from '../components/TimerOverlay'
+import Sheet from '../components/Sheet'
 import type { Profile, ScheduledDay, WorkoutBlock } from '../types'
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -214,20 +215,17 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
       )}
 
       {swapIndex != null && day.blocks[swapIndex] && (
-        <div className="sheet-back" onClick={() => setSwapIndex(null)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">Swap “{day.blocks[swapIndex].name}” for…</div>
-            {swapsFor(day.blocks[swapIndex].exerciseId).map((alt) => (
-              <button key={alt.id} className="swap-option" onClick={() => onSwap(alt.id)}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{alt.name}</div>
-                {alt.cue && <div className="tiny" style={{ marginTop: 2 }}>{alt.cue}</div>}
-              </button>
-            ))}
-            {swapsFor(day.blocks[swapIndex].exerciseId).length === 0 && (
-              <div className="muted">No same-pattern alternative available with your equipment.</div>
-            )}
-          </div>
-        </div>
+        <Sheet title={`Swap “${day.blocks[swapIndex].name}” for…`} onClose={() => setSwapIndex(null)}>
+          {swapsFor(day.blocks[swapIndex].exerciseId).map((alt) => (
+            <button key={alt.id} className="swap-option" onClick={() => onSwap(alt.id)}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{alt.name}</div>
+              {alt.cue && <div className="tiny" style={{ marginTop: 2 }}>{alt.cue}</div>}
+            </button>
+          ))}
+          {swapsFor(day.blocks[swapIndex].exerciseId).length === 0 && (
+            <div className="muted">No same-pattern alternative available with your equipment.</div>
+          )}
+        </Sheet>
       )}
 
       {timerIndex != null && day.blocks[timerIndex] && (
@@ -241,7 +239,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
         />
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast msg={toast} />
     </div>
   )
 }

@@ -1,4 +1,12 @@
 import { useCallback, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+
+/** Toasts portal to document.body for the same reason as sheets — fixed
+ *  positioning inside the .screen scroller is unreliable on iOS. */
+export function Toast({ msg }: { msg: string | null }) {
+  if (!msg) return null
+  return createPortal(<div className="toast">{msg}</div>, document.body)
+}
 
 export function useToast(): [string | null, (msg: string) => void] {
   const [toast, setToast] = useState<string | null>(null)

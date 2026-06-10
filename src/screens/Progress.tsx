@@ -4,7 +4,7 @@ import { getAllMetrics, summarize, type AllMetrics } from '../engine/metrics'
 import { availableExercises, hasSauna } from '../data/library'
 import LineChart from '../components/LineChart'
 import MetricDetail, { type MetricKey } from './MetricDetail'
-import { useToast } from '../components/useToast'
+import { Toast, useToast } from '../components/useToast'
 import type { BodyMetric, Profile, ScheduledDay } from '../types'
 
 function shortDate(iso: string): string {
@@ -157,7 +157,7 @@ export default function ProgressScreen({ profile }: { profile: Profile }) {
         <MetricDetail metric={detail} metrics={metrics} weights={weights} unit={profile.unit} onClose={() => setDetail(null)} />
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast msg={toast} />
     </div>
   )
 }

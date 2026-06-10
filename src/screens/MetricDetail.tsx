@@ -1,4 +1,5 @@
 import LineChart from '../components/LineChart'
+import Sheet from '../components/Sheet'
 import { summarize, type AllMetrics, type DayMetric } from '../engine/metrics'
 import type { BodyMetric } from '../types'
 
@@ -78,9 +79,7 @@ export default function MetricDetail({
   }
 
   return (
-    <div className="sheet-back" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-title">{meta.title}</div>
+    <Sheet title={meta.title} onClose={onClose}>
         <div className="card" style={{ marginBottom: 12 }}>
           {rows.map((r) => (
             <div className="row" key={r.label} style={{ padding: '7px 0' }}>
@@ -97,7 +96,6 @@ export default function MetricDetail({
         </div>
         <p className="tiny" style={{ marginTop: 4 }}>{meta.blurb}</p>
         <button className="btn btn-secondary" style={{ marginTop: 12 }} onClick={onClose}>Close</button>
-      </div>
-    </div>
+    </Sheet>
   )
 }

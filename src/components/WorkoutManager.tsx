@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../db'
 import { availableExercises, defFor } from '../data/library'
+import Sheet from './Sheet'
 import type { CustomWorkout, CustomWorkoutItem } from '../types'
 
 function itemSummary(item: CustomWorkoutItem): string {
@@ -91,9 +92,7 @@ export default function WorkoutManager({ notify }: { notify: (msg: string) => vo
       </button>
 
       {building && (
-        <div className="sheet-back" onClick={() => setBuilding(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">New workout</div>
+        <Sheet title="New workout" onClose={() => setBuilding(false)}>
             <div className="field">
               <label>Name</label>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Memorial Day Murph" />
@@ -148,9 +147,7 @@ export default function WorkoutManager({ notify }: { notify: (msg: string) => vo
             </button>
 
             {picking && (
-              <div className="sheet-back" onClick={() => setPicking(false)}>
-                <div className="sheet" onClick={(e) => e.stopPropagation()}>
-                  <div className="sheet-title">Add a movement</div>
+              <Sheet title="Add a movement" onClose={() => setPicking(false)}>
                   {[...groups.entries()].map(([pattern, list]) => (
                     <div key={pattern}>
                       <div className="tiny" style={{ fontWeight: 700, textTransform: 'uppercase', margin: '10px 0 6px' }}>{pattern.replace('-', ' ')}</div>
@@ -161,11 +158,9 @@ export default function WorkoutManager({ notify }: { notify: (msg: string) => vo
                       ))}
                     </div>
                   ))}
-                </div>
-              </div>
+              </Sheet>
             )}
-          </div>
-        </div>
+        </Sheet>
       )}
     </div>
   )

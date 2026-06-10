@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { db, isoDate, today } from '../db'
 import { hasSauna } from '../data/library'
 import { getRange, placeCustomWorkout } from '../engine/scheduler'
-import { useToast } from '../components/useToast'
+import { Toast, useToast } from '../components/useToast'
+import Sheet from '../components/Sheet'
 import type { CustomWorkout, ScheduledDay } from '../types'
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -156,31 +157,28 @@ export default function CalendarScreen() {
       </div>
 
       {placing && (
-        <div className="sheet-back" onClick={() => setPlacing(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">Place a workout on {selected}</div>
-            <p className="tiny" style={{ marginBottom: 12 }}>
-              <b>Insert</b> pushes the planned workout (and the rest of the week) a day later.
-              <b> Replace</b> swaps out that day's planned workout entirely.
-            </p>
-            {workouts.map((w) => (
-              <div className="swap-option" key={w.id} style={{ cursor: 'default' }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{w.name} {w.preset && <span className="tiny">· preset</span>}</div>
-                <div className="tiny" style={{ margin: '2px 0 8px' }}>{w.focus}</div>
-                <div className="btn-row">
-                  <button className="btn btn-sm btn-primary" onClick={() => place(w, 'insert')}>Insert</button>
-                  <button className="btn btn-sm btn-secondary" onClick={() => place(w, 'replace')}>Replace</button>
-                </div>
+        <Sheet title={`Place a workout on ${selected}`} onClose={() => setPlacing(false)}>
+          <p className="tiny" style={{ marginBottom: 12 }}>
+            <b>Insert</b> pushes the planned workout (and the rest of the week) a day later.
+            <b> Replace</b> swaps out that day's planned workout entirely.
+          </p>
+          {workouts.map((w) => (
+            <div className="swap-option" key={w.id} style={{ cursor: 'default' }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{w.name} {w.preset && <span className="tiny">· preset</span>}</div>
+              <div className="tiny" style={{ margin: '2px 0 8px' }}>{w.focus}</div>
+              <div className="btn-row">
+                <button className="btn btn-sm btn-primary" onClick={() => place(w, 'insert')}>Insert</button>
+                <button className="btn btn-sm btn-secondary" onClick={() => place(w, 'replace')}>Replace</button>
               </div>
-            ))}
-            {workouts.length === 0 && (
-              <div className="muted">No custom workouts yet — build one in Profile → My Workouts.</div>
-            )}
-          </div>
-        </div>
+            </div>
+          ))}
+          {workouts.length === 0 && (
+            <div className="muted">No custom workouts yet — build one in Profile → My Workouts.</div>
+          )}
+        </Sheet>
       )}
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast msg={toast} />
     </div>
   )
 }

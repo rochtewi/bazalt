@@ -213,7 +213,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .sheet {
   background: var(--bg-card); border-radius: 18px 18px 0 0; width: 100%; max-width: 520px;
-  margin: 0 auto; padding: 18px 16px calc(18px + var(--safe-bottom)); max-height: 75dvh;
+  margin: 0 auto; padding: 18px 16px calc(26px + var(--safe-bottom)); max-height: 80dvh;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
   /* The sheet scrolls itself; never hand the gesture to the screen behind */
   touch-action: pan-y; overscroll-behavior: contain;
@@ -237,7 +237,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 10px; font-size: 13px; font-weight: 600; color: var(--text-dim);
 }
-.equip-item.on { border-color: rgba(255, 122, 69, 0.5); color: var(--text); background: var(--accent-soft); }
+.equip-item.on { border-color: rgba(207, 138, 85, 0.5); color: var(--text); background: var(--accent-soft); }
 .equip-check { width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--accent); flex-shrink: 0; background: var(--bg-raised); }
 
 /* ---- v2: calendar custom dot, metric deltas, tappable stats ---- */

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { db } from '../db'
 import { EQUIPMENT_LABELS } from '../data/exercises'
 import { allExercises, loadLibrary, owned } from '../data/library'
+import Sheet from './Sheet'
 import type { Equipment, ExerciseDef, MovementPattern, Profile } from '../types'
 
 const TOGGLABLE = (Object.keys(EQUIPMENT_LABELS) as Equipment[]).filter((e) => e !== 'bodyweight')
@@ -120,9 +121,7 @@ export default function EquipmentManager({
       </button>
 
       {building && (
-        <div className="sheet-back" onClick={() => setBuilding(false)}>
-          <div className="sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-title">New exercise</div>
+        <Sheet title="New exercise" onClose={() => setBuilding(false)}>
             <div className="field">
               <label>Name</label>
               <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Landmine Press" />
@@ -181,8 +180,7 @@ export default function EquipmentManager({
               </div>
             )}
             <button className="btn btn-primary" onClick={addCustom} disabled={!name.trim()}>Add to library</button>
-          </div>
-        </div>
+        </Sheet>
       )}
     </div>
   )

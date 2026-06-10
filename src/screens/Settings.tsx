@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import { buildICS, currentSubscription, downloadICS, isStandalone, pushSupported, subscribeToPush } from '../notifications'
-import { useToast } from '../components/useToast'
+import { Toast, useToast } from '../components/useToast'
 import { downloadBackup, exportBackup, importBackup } from '../backup'
 import { hasSauna } from '../data/library'
 import EquipmentManager from '../components/EquipmentManager'
@@ -220,7 +220,7 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
         )}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      <Toast msg={toast} />
     </div>
   )
 }

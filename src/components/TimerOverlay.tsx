@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Overlay } from './Sheet'
 import type { WorkoutBlock } from '../types'
 
 interface Phase {
@@ -98,6 +99,7 @@ export default function TimerOverlay({ block, onDone, onClose }: { block: Workou
         : 'var(--blue)'
 
   return (
+    <Overlay>
     <div className="timer-back">
       <div className="timer-card">
         <div className="timer-label" style={{ color }}>
@@ -135,5 +137,6 @@ export default function TimerOverlay({ block, onDone, onClose }: { block: Workou
         )}
       </div>
     </div>
+    </Overlay>
   )
 }
