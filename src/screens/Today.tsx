@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { today } from '../db'
-import { completeDay, getDay, pushDay, skipDay, swapBlock } from '../engine/scheduler'
-import { swapsFor, EXERCISE_MAP } from '../data/exercises'
+import { completeDay, getDay, pushDay, refreshTargets, skipDay, swapBlock } from '../engine/scheduler'
+import { defFor, swapsFor } from '../data/library'
 import { useToast } from '../components/useToast'
+import TimerOverlay from '../components/TimerOverlay'
 import type { Profile, ScheduledDay, WorkoutBlock } from '../types'
 
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -16,10 +17,14 @@ function prettyToday(): string {
 export default function TodayScreen({ profile }: { profile: Profile }) {
   const [day, setDay] = useState<ScheduledDay | null>(null)
   const [swapIndex, setSwapIndex] = useState<number | null>(null)
+  const [timerIndex, setTimerIndex] = useState<number | null>(null)
   const [toast, showToast] = useToast()
 
   const load = useCallback(async () => {
-    const d = await getDay(today())
+    let d = await getDay(today())
+    // Targets are recomputed the day you train, so progression earned since
+    // the day was generated always shows up.
+    if (d) d = await refreshTargets(d)
     setDay(d ?? null)
   }, [])
 
@@ -59,6 +64,14 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     })
   }
 
+  function setQuantity(bi: number, value: string) {
+    mutate((d) => {
+      const n = value === '' ? undefined : Number(value)
+      d.blocks[bi].actualQuantity = Number.isFinite(n) ? n : undefined
+      return d
+    })
+  }
+
   function toggleBlockSkip(bi: number) {
     mutate((d) => {
       const b = d.blocks[bi]
@@ -70,15 +83,16 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
   function markBlockDone(bi: number) {
     mutate((d) => {
       const b = d.blocks[bi]
-      const allDone = b.sets.every((s) => s.done)
+      const wasDone = b.status === 'done'
       for (const s of b.sets) {
-        s.done = !allDone
+        s.done = !wasDone
         if (s.done) {
           if (s.actualWeight == null && s.targetWeight != null) s.actualWeight = s.targetWeight
           if (s.actualReps == null && s.targetReps) s.actualReps = s.targetReps[1]
         }
       }
-      b.status = allDone ? 'pending' : 'done'
+      if (b.kind === 'activity' && !wasDone && b.actualQuantity == null) b.actualQuantity = b.quantity
+      b.status = wasDone ? 'pending' : 'done'
       return d
     })
   }
@@ -88,7 +102,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     const updated = await swapBlock(day, swapIndex, newId)
     setDay(updated)
     setSwapIndex(null)
-    showToast(`Swapped in ${EXERCISE_MAP.get(newId)?.name}`)
+    showToast(`Swapped in ${defFor(newId).name}`)
   }
 
   async function onComplete() {
@@ -100,7 +114,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     }
     await completeDay(finished)
     await load()
-    showToast('Workout logged. Targets updated for next time 💪')
+    showToast(day.deload ? 'Deload logged — recovery banked 😴' : 'Workout logged. Targets updated for next time 💪')
   }
 
   async function onPush() {
@@ -115,11 +129,11 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     showToast('Skipped. Tomorrow stays on plan.')
   }
 
-  async function onSaunaOnly() {
-    if (!day) return
-    const d = structuredClone(day)
-    d.saunaDone = !d.saunaDone
-    setDay(d)
+  function onSauna() {
+    mutate((d) => {
+      d.saunaDone = !d.saunaDone
+      return d
+    })
   }
 
   const doneBlocks = day.blocks.filter((b) => b.status === 'done').length
@@ -130,13 +144,14 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
       <div className="screen-sub">{prettyToday()}</div>
 
       <div className="card-hero">
-        <div className="eyebrow">{isRest ? 'Recovery' : "Today's workout"}</div>
+        <div className="eyebrow">{isRest ? 'Recovery' : day.custom ? 'Custom workout' : "Today's workout"}</div>
         <div className="hero-title">{day.title}</div>
         <div className="hero-sub">{day.focus}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           {day.status === 'completed' && <span className="pill pill-green">✓ Completed</span>}
           {day.status === 'skipped' && <span className="pill pill-red">Skipped</span>}
           {pending && !isRest && <span className="pill pill-dim">{doneBlocks}/{day.blocks.length} exercises</span>}
+          {day.deload && <span className="pill pill-dim">😴 Deload week</span>}
           {day.sauna && <span className="pill pill-accent">🔥 Sauna {profile.saunaMinutes} min</span>}
         </div>
       </div>
@@ -150,15 +165,17 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
             editable={pending}
             onToggleSet={(si) => toggleSet(bi, si)}
             onField={(si, f, v) => setField(bi, si, f, v)}
+            onQuantity={(v) => setQuantity(bi, v)}
             onSkip={() => toggleBlockSkip(bi)}
             onAllDone={() => markBlockDone(bi)}
             onSwapReq={() => setSwapIndex(bi)}
+            onTimer={() => setTimerIndex(bi)}
           />
         ))}
 
       {day.sauna && (
         <div className="sauna-row">
-          <button className={`set-check ${day.saunaDone ? 'on' : ''}`} onClick={onSaunaOnly} disabled={!pending && day.status !== 'completed'}>
+          <button className={`set-check ${day.saunaDone ? 'on' : ''}`} onClick={onSauna} disabled={!pending}>
             {day.saunaDone ? '✓' : ''}
           </button>
           <div>
@@ -178,12 +195,11 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
 
       {pending && (
         <div style={{ marginTop: 16 }}>
-          {!isRest && (
+          {!isRest ? (
             <button className="btn btn-primary" onClick={onComplete}>
               Finish workout ✓
             </button>
-          )}
-          {isRest && day.sauna === false && (
+          ) : (
             <button className="btn btn-green" onClick={onComplete}>
               Mark rest day done
             </button>
@@ -214,6 +230,17 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
         </div>
       )}
 
+      {timerIndex != null && day.blocks[timerIndex] && (
+        <TimerOverlay
+          block={day.blocks[timerIndex]}
+          onDone={() => {
+            markBlockDone(timerIndex)
+            setTimerIndex(null)
+          }}
+          onClose={() => setTimerIndex(null)}
+        />
+      )}
+
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
@@ -225,21 +252,26 @@ function BlockCard({
   editable,
   onToggleSet,
   onField,
+  onQuantity,
   onSkip,
   onAllDone,
   onSwapReq,
+  onTimer,
 }: {
   block: WorkoutBlock
   unit: 'lb' | 'kg'
   editable: boolean
   onToggleSet: (si: number) => void
   onField: (si: number, field: 'actualReps' | 'actualWeight', value: string) => void
+  onQuantity: (value: string) => void
   onSkip: () => void
   onAllDone: () => void
   onSwapReq: () => void
+  onTimer: () => void
 }) {
-  const def = EXERCISE_MAP.get(block.exerciseId)
+  const def = defFor(block.exerciseId)
   const skipped = block.status === 'skipped'
+  const hasTimer = block.kind === 'timed' || block.kind === 'intervals'
 
   let targetLine = ''
   if (block.kind === 'intervals') {
@@ -247,10 +279,13 @@ function BlockCard({
   } else if (block.kind === 'timed') {
     const s = block.seconds ?? 0
     targetLine = `${block.sets.length} × ${s >= 300 ? `${Math.round(s / 60)} min` : `${s}s`}`
+  } else if (block.kind === 'activity') {
+    targetLine = `${block.quantity ?? def.defaultQuantity} ${block.unit}`
   } else if (block.sets[0]?.targetReps) {
     const [lo, hi] = block.sets[0].targetReps
+    const reps = lo === hi ? `${lo}` : `${lo}–${hi}`
     const w = block.sets[0].targetWeight != null ? ` @ ${block.sets[0].targetWeight} ${unit}` : ''
-    targetLine = `${block.sets.length} × ${lo}–${hi}${w}`
+    targetLine = `${block.sets.length} × ${reps}${w}`
   }
 
   return (
@@ -265,6 +300,7 @@ function BlockCard({
         </div>
         {editable && (
           <div className="block-actions">
+            {hasTimer && <button className="btn btn-sm btn-secondary" onClick={onTimer}>⏱</button>}
             <button className="btn btn-sm btn-secondary" onClick={onSwapReq}>⇄</button>
             <button className="btn btn-sm btn-secondary" onClick={onSkip}>{skipped ? '↩' : '✕'}</button>
           </div>
@@ -292,7 +328,13 @@ function BlockCard({
               <input
                 className="set-input"
                 inputMode="numeric"
-                placeholder={set.targetReps ? `${set.targetReps[0]}–${set.targetReps[1]}` : '—'}
+                placeholder={
+                  set.targetReps
+                    ? set.targetReps[0] === set.targetReps[1]
+                      ? String(set.targetReps[0])
+                      : `${set.targetReps[0]}–${set.targetReps[1]}`
+                    : '—'
+                }
                 value={set.actualReps ?? ''}
                 onChange={(e) => onField(si, 'actualReps', e.target.value)}
                 disabled={!editable}
@@ -303,13 +345,41 @@ function BlockCard({
               </button>
             </div>
           ))}
+          {block.sets.length > 4 && editable && (
+            <button className="btn btn-sm btn-green" style={{ marginTop: 10 }} onClick={onAllDone}>
+              {block.status === 'done' ? 'Undo all' : 'Mark all done ✓'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!skipped && block.kind === 'activity' && (
+        <div className="set-row">
+          <input
+            className="set-input"
+            style={{ width: 96 }}
+            inputMode="decimal"
+            placeholder={String(block.quantity ?? def.defaultQuantity ?? '')}
+            value={block.actualQuantity ?? ''}
+            onChange={(e) => onQuantity(e.target.value)}
+            disabled={!editable}
+          />
+          <span className="unit-label">{block.unit}</span>
+          {editable && (
+            <button className={`btn btn-sm ${block.status === 'done' ? 'btn-secondary' : 'btn-green'}`} onClick={onAllDone}>
+              {block.status === 'done' ? 'Undo' : 'Mark done ✓'}
+            </button>
+          )}
         </div>
       )}
 
       {!skipped && (block.kind === 'timed' || block.kind === 'intervals') && editable && (
-        <button className="btn btn-sm btn-green" style={{ marginTop: 10 }} onClick={onAllDone}>
-          {block.status === 'done' ? 'Undo' : 'Mark done ✓'}
-        </button>
+        <div className="btn-row" style={{ marginTop: 10 }}>
+          <button className="btn btn-sm btn-secondary" onClick={onTimer}>⏱ Start timer</button>
+          <button className="btn btn-sm btn-green" onClick={onAllDone}>
+            {block.status === 'done' ? 'Undo' : 'Mark done ✓'}
+          </button>
+        </div>
       )}
 
       {!skipped && def?.cue && <div className="block-cue">{def.cue}</div>}

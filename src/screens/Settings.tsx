@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { db } from '../db'
 import { buildICS, currentSubscription, downloadICS, isStandalone, pushSupported, subscribeToPush } from '../notifications'
 import { useToast } from '../components/useToast'
+import EquipmentManager from '../components/EquipmentManager'
+import WorkoutManager from '../components/WorkoutManager'
 import type { Profile } from '../types'
 
 export default function SettingsScreen({ profile, onProfileChange }: { profile: Profile; onProfileChange: () => void }) {
@@ -94,6 +96,9 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
         </div>
         <button className="btn btn-primary" onClick={save}>Save profile</button>
       </div>
+
+      <EquipmentManager profile={profile} onChanged={onProfileChange} notify={showToast} />
+      <WorkoutManager notify={showToast} />
 
       <div className="card">
         <div style={{ fontWeight: 800, marginBottom: 6 }}>Daily workout notification</div>

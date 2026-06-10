@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { db } from './db'
+import { db, seedPresets } from './db'
+import { loadLibrary } from './data/library'
 import { ensureSchedule } from './engine/scheduler'
 import type { Profile } from './types'
 import Onboarding from './screens/Onboarding'
@@ -23,6 +24,8 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today')
 
   const load = useCallback(async () => {
+    await loadLibrary()
+    await seedPresets()
     const p = await db.profile.get('me')
     if (p) {
       await ensureSchedule(p)

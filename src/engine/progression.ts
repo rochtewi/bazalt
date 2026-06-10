@@ -19,15 +19,26 @@ export function freshState(def: ExerciseDef): ExerciseState {
   }
 }
 
+/** Round to the nearest 5 for plate-friendly deload targets. */
+function round5(n: number): number {
+  return Math.max(5, Math.round(n / 5) * 5)
+}
+
 /** Build the target sets for a block from current progression state. */
-export function buildSets(def: ExerciseDef, state: ExerciseState, setCount: number): SetEntry[] {
+export function buildSets(
+  def: ExerciseDef,
+  state: ExerciseState,
+  setCount: number,
+  opts: { deload?: boolean; fixedReps?: number } = {},
+): SetEntry[] {
+  let weight = def.kind === 'weighted' ? state.weight : null
+  if (opts.deload && weight != null) weight = round5(weight * 0.85)
+  const reps: [number, number] | null = opts.fixedReps
+    ? [opts.fixedReps, opts.fixedReps]
+    : (def.repRange ?? null)
   const sets: SetEntry[] = []
   for (let i = 0; i < setCount; i++) {
-    sets.push({
-      targetReps: def.repRange ?? null,
-      targetWeight: def.kind === 'weighted' ? state.weight : null,
-      done: false,
-    })
+    sets.push({ targetReps: reps, targetWeight: weight, done: false })
   }
   return sets
 }

@@ -23,6 +23,15 @@ device. The only network traffic after install is a one-way daily reminder push 
 - **Progress** — streak, totals, body-weight chart, per-lift strength chart
 - **Daily notification** sent by this repository's own GitHub Action (free, no third party)
 - **Calendar export (.ics)** as a fully offline reminder fallback
+- **Equipment manager** — check off gear you own to unlock matching exercises; create custom exercises
+- **Custom workouts** — build your own (Murph and other presets included) and place them on any
+  calendar day, either inserting (schedule shifts) or replacing that day's plan
+- **Activity logging with real units** — runs in miles, gardening/hikes/swims in minutes
+- **Workout timers** — tap any timed or interval exercise for a 5-second lead-in and a live
+  countdown; sprint blocks cycle work/rest rounds automatically with audio cues
+- **Calories burned & total weight moved** — MET-based estimates with week-over-week deltas; every
+  Progress card taps through to weekly/monthly/lifetime breakdowns
+- **Deload weeks** — every 6th week automatically lightens the load to bank recovery
 
 ## Install on your iPhone (one time, ~2 minutes)
 

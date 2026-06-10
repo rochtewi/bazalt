@@ -203,3 +203,26 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheet-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; }
 .swap-option { display: block; width: 100%; text-align: left; padding: 13px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-raised); margin-bottom: 8px; }
 .swap-option:active { background: var(--accent-soft); }
+
+/* ---- v2: timer ---- */
+.timer-back { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.92); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.timer-card { width: 100%; max-width: 360px; text-align: center; }
+.timer-label { font-size: 16px; font-weight: 800; letter-spacing: 0.06em; margin-bottom: 12px; min-height: 22px; }
+.timer-ring { width: min(70vw, 280px); height: auto; margin: 0 auto 18px; display: block; }
+
+/* ---- v2: equipment checklist ---- */
+.equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.equip-item {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 10px; font-size: 13px; font-weight: 600; color: var(--text-dim);
+}
+.equip-item.on { border-color: rgba(255, 122, 69, 0.5); color: var(--text); background: var(--accent-soft); }
+.equip-check { width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--border); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--accent); flex-shrink: 0; background: var(--bg-raised); }
+
+/* ---- v2: calendar custom dot, metric deltas, tappable stats ---- */
+.dot-custom { background: var(--amber); }
+.delta-up { color: var(--green); font-weight: 800; }
+.delta-down { color: var(--red); font-weight: 800; }
+button.stat { text-align: left; font: inherit; }
+button.stat:active { transform: scale(0.98); }

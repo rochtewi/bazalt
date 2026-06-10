@@ -1,5 +1,5 @@
 import type { ExerciseDef } from '../types'
-import { EXERCISE_MAP } from '../data/exercises'
+import { defFor as libraryDefFor } from '../data/library'
 
 export interface DayTemplate {
   key: string
@@ -105,7 +105,5 @@ export function templateForIndex(dayIndex: number, daysPerWeek: 5 | 6): DayTempl
 }
 
 export function defFor(id: string): ExerciseDef {
-  const def = EXERCISE_MAP.get(id)
-  if (!def) throw new Error(`Unknown exercise: ${id}`)
-  return def
+  return libraryDefFor(id)
 }
