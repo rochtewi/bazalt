@@ -13,7 +13,7 @@ interface Backup {
   tables: Record<string, unknown[]>
 }
 
-const TABLES = ['profile', 'metrics', 'schedule', 'exerciseState', 'meta', 'customExercises', 'customWorkouts'] as const
+const TABLES = ['profile', 'metrics', 'schedule', 'exerciseState', 'meta', 'customExercises', 'customWorkouts', 'healthEvents'] as const
 
 export async function exportBackup(): Promise<string> {
   const tables: Record<string, unknown[]> = {}

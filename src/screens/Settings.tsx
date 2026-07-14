@@ -7,7 +7,7 @@ import { hasSauna } from '../data/library'
 import EquipmentManager from '../components/EquipmentManager'
 import GearManager from '../components/GearManager'
 import WorkoutManager from '../components/WorkoutManager'
-import { buildDailySummaryCSV, buildWorkoutCSV, downloadCSV, type ExportRange } from '../export'
+import { buildDailySummaryCSV, buildHealthCSV, buildWorkoutCSV, downloadCSV, type ExportRange } from '../export'
 import type { Profile } from '../types'
 
 export default function SettingsScreen({ profile, onProfileChange }: { profile: Profile; onProfileChange: () => void }) {
@@ -211,6 +211,16 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
             Daily summary
           </button>
         </div>
+        <button
+          className="btn btn-secondary"
+          style={{ marginTop: 10 }}
+          onClick={async () => {
+            downloadCSV(await buildHealthCSV(range), 'bazalt-health')
+            showToast('Health log exported')
+          }}
+        >
+          Health log
+        </button>
       </div>
 
       <div className="card">

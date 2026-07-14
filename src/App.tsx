@@ -7,14 +7,16 @@ import type { Profile } from './types'
 import Onboarding from './screens/Onboarding'
 import TodayScreen from './screens/Today'
 import CalendarScreen from './screens/CalendarScreen'
+import HealthScreen from './screens/Health'
 import ProgressScreen from './screens/Progress'
 import SettingsScreen from './screens/Settings'
 
-type Tab = 'today' | 'calendar' | 'progress' | 'settings'
+type Tab = 'today' | 'calendar' | 'health' | 'progress' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'today', label: 'Today' },
   { id: 'calendar', label: 'Calendar' },
+  { id: 'health', label: 'Health' },
   { id: 'progress', label: 'Progress' },
   { id: 'settings', label: 'Profile' },
 ]
@@ -54,6 +56,7 @@ export default function App() {
     <div className="app-shell">
       {tab === 'today' && <TodayScreen profile={profile} />}
       {tab === 'calendar' && <CalendarScreen />}
+      {tab === 'health' && <HealthScreen />}
       {tab === 'progress' && <ProgressScreen profile={profile} />}
       {tab === 'settings' && <SettingsScreen profile={profile} onProfileChange={load} />}
       <nav className="tabbar">

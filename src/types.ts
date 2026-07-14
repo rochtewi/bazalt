@@ -179,3 +179,28 @@ export interface MetaEntry {
   key: string
   value: string
 }
+
+// ---------- Health tracking ----------
+// Fast tap-based events: meals (broad categories), symptoms with severity,
+// an optional evening check-in, and a "day confirmed" marker meaning absence
+// of symptom logs that day genuinely means symptom-free.
+
+export type HealthEventType = 'meal' | 'symptom' | 'context' | 'day_confirm'
+export type Severity = 1 | 2 | 3
+
+export interface HealthEvent {
+  id?: number
+  type: HealthEventType
+  timestamp: string // ISO datetime, user-adjustable at entry
+  date: string // local yyyy-mm-dd derived from timestamp, for grouping/queries
+  meal?: { categories: string[] }
+  symptom?: { symptom: string; severity: Severity; location?: string }
+  context?: { sleep: Severity; stress: Severity; hydration: Severity }
+}
+
+/** User-editable logging vocabularies. Archived items stay attached to old events. */
+export interface HealthListItem {
+  id: string
+  label: string
+  archived?: boolean
+}

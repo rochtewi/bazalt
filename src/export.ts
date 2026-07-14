@@ -88,6 +88,40 @@ export async function buildDailySummaryCSV(range: ExportRange, profile: Profile)
   return toCSV(rows)
 }
 
+/**
+ * Health events in tidy, pivot-friendly shape: one row per meal category /
+ * symptom / check-in, each stamped with whether its day was confirmed —
+ * external analysis must know which symptom-free days are real.
+ */
+export async function buildHealthCSV(range: ExportRange): Promise<string> {
+  const to = today()
+  const from = range === 'all' ? '0000-00-00' : addDays(to, -range)
+  const events = (await db.healthEvents.orderBy('timestamp').toArray()).filter(
+    (e) => e.date >= from && e.date <= to,
+  )
+  const confirmedDates = new Set(events.filter((e) => e.type === 'day_confirm').map((e) => e.date))
+
+  const rows: (string | number | null | undefined)[][] = [[
+    'Date', 'Time', 'Type', 'Item', 'Severity', 'Location', 'Sleep', 'Stress', 'Hydration', 'Day Confirmed',
+  ]]
+  for (const e of events) {
+    const time = new Date(e.timestamp).toLocaleTimeString([], { hour12: false })
+    const conf = confirmedDates.has(e.date) ? 'yes' : ''
+    if (e.type === 'meal') {
+      for (const c of e.meal?.categories ?? []) {
+        rows.push([e.date, time, 'meal', c, '', '', '', '', '', conf])
+      }
+    } else if (e.type === 'symptom') {
+      rows.push([e.date, time, 'symptom', e.symptom?.symptom, e.symptom?.severity, e.symptom?.location ?? '', '', '', '', conf])
+    } else if (e.type === 'context') {
+      rows.push([e.date, time, 'checkin', '', '', '', e.context?.sleep, e.context?.stress, e.context?.hydration, conf])
+    } else {
+      rows.push([e.date, time, 'day_confirm', '', '', '', '', '', '', 'yes'])
+    }
+  }
+  return toCSV(rows)
+}
+
 export function downloadCSV(content: string, name: string): void {
   const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)

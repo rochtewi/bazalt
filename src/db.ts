@@ -4,6 +4,7 @@ import type {
   CustomWorkout,
   ExerciseDef,
   ExerciseState,
+  HealthEvent,
   MetaEntry,
   Profile,
   ScheduledDay,
@@ -19,6 +20,7 @@ class ForgeDB extends Dexie {
   meta!: Table<MetaEntry, string>
   customExercises!: Table<ExerciseDef, string>
   customWorkouts!: Table<CustomWorkout, number>
+  healthEvents!: Table<HealthEvent, number>
 
   constructor() {
     super('forge')
@@ -51,6 +53,10 @@ class ForgeDB extends Dexie {
       await tx.table('profile').toCollection().modify((p: Profile) => {
         if (p.equipment && !p.equipment.includes('sauna')) p.equipment.push('sauna')
       })
+    })
+    // v4: health tracking events (meals, symptoms, check-ins, day confirms).
+    this.version(4).stores({
+      healthEvents: '++id, date, type, timestamp',
     })
   }
 }
