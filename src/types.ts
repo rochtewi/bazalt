@@ -193,9 +193,17 @@ export interface HealthEvent {
   type: HealthEventType
   timestamp: string // ISO datetime, user-adjustable at entry
   date: string // local yyyy-mm-dd derived from timestamp, for grouping/queries
-  meal?: { categories: string[] }
+  meal?: { categories: string[]; name?: string } // name = quick-pick label(s), e.g. "Pizza"
   symptom?: { symptom: string; severity: Severity; location?: string }
-  context?: { sleep: Severity; stress: Severity; hydration: Severity }
+  // Check-in, loggable any time and as often as wanted. All scores 1-3.
+  context?: {
+    sleep: Severity
+    stress: Severity
+    hydration: Severity
+    mood?: Severity
+    energy?: Severity
+    func?: Severity // "how functional was the day"
+  }
 }
 
 /** User-editable logging vocabularies. Archived items stay attached to old events. */

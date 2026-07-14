@@ -29,7 +29,10 @@ function fmtDate(date: string): string {
 }
 
 function eventSummary(e: HealthEvent, lists: HealthLists): string {
-  if (e.type === 'meal') return (e.meal?.categories ?? []).map((c) => labelFor(lists.meals, c)).join(', ')
+  if (e.type === 'meal') {
+    const cats = (e.meal?.categories ?? []).map((c) => labelFor(lists.meals, c)).join(', ')
+    return e.meal?.name ? `${e.meal.name} — ${cats}` : cats
+  }
   if (e.type === 'symptom') {
     const sev = ['', 'mild', 'moderate', 'severe'][e.symptom?.severity ?? 0]
     const loc = e.symptom?.location ? ` (${e.symptom.location})` : ''
@@ -37,7 +40,12 @@ function eventSummary(e: HealthEvent, lists: HealthLists): string {
   }
   if (e.type === 'context') {
     const c = e.context
-    return c ? `Sleep ${c.sleep}/3 · Stress ${c.stress}/3 · Hydration ${c.hydration}/3` : ''
+    if (!c) return ''
+    const parts = [`Sleep ${c.sleep}`, `Stress ${c.stress}`, `Hydration ${c.hydration}`]
+    if (c.mood) parts.push(`Mood ${c.mood}`)
+    if (c.energy) parts.push(`Energy ${c.energy}`)
+    if (c.func) parts.push(`Function ${c.func}`)
+    return parts.join(' · ')
   }
   return 'Day confirmed'
 }
@@ -125,7 +133,8 @@ export default function HealthScreen() {
             Log a symptom
           </button>
           <button className="btn btn-secondary btn-log" onClick={() => setSheet('checkin')}>
-            Evening check-in
+            Check-in
+            <span className="tiny" style={{ fontWeight: 400 }}>any time, as often as you like</span>
           </button>
 
           {todayEvents.length > 0 && (
@@ -228,7 +237,8 @@ function HistoryList({ events, lists, onEdit }: {
   )
 }
 
-/** Timestamp field with the quick shortcuts the brief asks for. */
+/** Timestamp field with quick shortcuts. The "Logging for" line makes every
+ *  tap visibly change the time — iOS renders datetime-local too quietly. */
 function TimeField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
   function shortcut(kind: 'now' | '-1h' | '-3h' | 'morning') {
     const d = new Date()
@@ -237,9 +247,10 @@ function TimeField({ value, onChange }: { value: string; onChange: (iso: string)
     if (kind === 'morning') d.setHours(8, 0, 0, 0)
     onChange(d.toISOString())
   }
+  const pretty = new Date(value).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })
   return (
     <div className="field">
-      <label>When</label>
+      <label>When — logging for <span style={{ color: 'var(--accent)' }}>{pretty}</span></label>
       <input
         type="datetime-local"
         className="input"
@@ -278,11 +289,30 @@ function MealSheet({ lists, initial, onSave, onDelete, onClose }: {
   onClose: () => void
 }) {
   const [selected, setSelected] = useState<string[]>(initial?.meal?.categories ?? [])
+  const [picked, setPicked] = useState<string[]>([]) // quick-pick labels used
   const [ts, setTs] = useState(initial?.timestamp ?? new Date().toISOString())
   const active = lists.meals.filter((m) => !m.archived || selected.includes(m.id))
 
+  function applyPreset(p: { label: string; categories: string[] }) {
+    setSelected((s) => [...new Set([...s, ...p.categories])])
+    setPicked((names) => (names.includes(p.label) ? names : [...names, p.label]))
+  }
+
   return (
     <Sheet title={initial ? 'Edit meal' : 'What was in it?'} onClose={onClose}>
+      {!initial && lists.presets.length > 0 && (
+        <>
+          <div className="tiny" style={{ fontWeight: 700, marginBottom: 6 }}>QUICK PICKS — fills the ingredients, adjust below</div>
+          <div className="chip-grid" style={{ marginBottom: 10 }}>
+            {lists.presets.map((p) => (
+              <button key={p.id} className={`chip ${picked.includes(p.label) ? 'on' : ''}`} onClick={() => applyPreset(p)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="tiny" style={{ fontWeight: 700, marginBottom: 6 }}>INGREDIENTS</div>
+        </>
+      )}
       <div className="chip-grid">
         {active.map((m) => (
           <button
@@ -298,7 +328,15 @@ function MealSheet({ lists, initial, onSave, onDelete, onClose }: {
       <EditorButtons
         canSave={selected.length > 0}
         isEdit={!!initial}
-        onSave={() => onSave({ ...(initial ?? { type: 'meal' as const, date: '' }), type: 'meal', timestamp: ts, meal: { categories: selected } })}
+        onSave={() => onSave({
+          ...(initial ?? { type: 'meal' as const, date: '' }),
+          type: 'meal',
+          timestamp: ts,
+          meal: {
+            categories: selected,
+            ...(initial?.meal?.name || picked.length ? { name: initial?.meal?.name ?? picked.join(' + ') } : {}),
+          },
+        })}
         onDelete={() => initial?.id && onDelete(initial.id)}
       />
     </Sheet>
@@ -368,6 +406,9 @@ function CheckinSheet({ initial, onSave, onDelete, onClose }: {
   const [sleep, setSleep] = useState<Severity>(initial?.context?.sleep ?? 2)
   const [stress, setStress] = useState<Severity>(initial?.context?.stress ?? 2)
   const [hydration, setHydration] = useState<Severity>(initial?.context?.hydration ?? 2)
+  const [mood, setMood] = useState<Severity>(initial?.context?.mood ?? 2)
+  const [energy, setEnergy] = useState<Severity>(initial?.context?.energy ?? 2)
+  const [func, setFunc] = useState<Severity>(initial?.context?.func ?? 2)
   const [ts, setTs] = useState(initial?.timestamp ?? new Date().toISOString())
 
   const row = (label: string, value: Severity, set: (n: Severity) => void, names: string[]) => (
@@ -382,7 +423,10 @@ function CheckinSheet({ initial, onSave, onDelete, onClose }: {
   )
 
   return (
-    <Sheet title={initial ? 'Edit check-in' : 'How was today?'} onClose={onClose}>
+    <Sheet title={initial ? 'Edit check-in' : 'How are you right now?'} onClose={onClose}>
+      {row('Mood', mood, setMood, ['Low', 'OK', 'Good'])}
+      {row('Energy', energy, setEnergy, ['Low', 'OK', 'High'])}
+      {row('How functional?', func, setFunc, ['Rough', 'OK', 'Firing'])}
       {row('Sleep last night', sleep, setSleep, ['Poor', 'OK', 'Good'])}
       {row('Stress', stress, setStress, ['Low', 'Medium', 'High'])}
       {row('Hydration', hydration, setHydration, ['Low', 'OK', 'Good'])}
@@ -390,7 +434,12 @@ function CheckinSheet({ initial, onSave, onDelete, onClose }: {
       <EditorButtons
         canSave
         isEdit={!!initial}
-        onSave={() => onSave({ ...(initial ?? { type: 'context' as const, date: '' }), type: 'context', timestamp: ts, context: { sleep, stress, hydration } })}
+        onSave={() => onSave({
+          ...(initial ?? { type: 'context' as const, date: '' }),
+          type: 'context',
+          timestamp: ts,
+          context: { sleep, stress, hydration, mood, energy, func },
+        })}
         onDelete={() => initial?.id && onDelete(initial.id)}
       />
     </Sheet>

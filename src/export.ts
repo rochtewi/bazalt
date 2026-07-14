@@ -102,21 +102,23 @@ export async function buildHealthCSV(range: ExportRange): Promise<string> {
   const confirmedDates = new Set(events.filter((e) => e.type === 'day_confirm').map((e) => e.date))
 
   const rows: (string | number | null | undefined)[][] = [[
-    'Date', 'Time', 'Type', 'Item', 'Severity', 'Location', 'Sleep', 'Stress', 'Hydration', 'Day Confirmed',
+    'Date', 'Time', 'Type', 'Item', 'Meal', 'Severity', 'Location',
+    'Sleep', 'Stress', 'Hydration', 'Mood', 'Energy', 'Function', 'Day Confirmed',
   ]]
   for (const e of events) {
     const time = new Date(e.timestamp).toLocaleTimeString([], { hour12: false })
     const conf = confirmedDates.has(e.date) ? 'yes' : ''
     if (e.type === 'meal') {
       for (const c of e.meal?.categories ?? []) {
-        rows.push([e.date, time, 'meal', c, '', '', '', '', '', conf])
+        rows.push([e.date, time, 'meal', c, e.meal?.name ?? '', '', '', '', '', '', '', '', '', conf])
       }
     } else if (e.type === 'symptom') {
-      rows.push([e.date, time, 'symptom', e.symptom?.symptom, e.symptom?.severity, e.symptom?.location ?? '', '', '', '', conf])
+      rows.push([e.date, time, 'symptom', e.symptom?.symptom, '', e.symptom?.severity, e.symptom?.location ?? '', '', '', '', '', '', '', conf])
     } else if (e.type === 'context') {
-      rows.push([e.date, time, 'checkin', '', '', '', e.context?.sleep, e.context?.stress, e.context?.hydration, conf])
+      const c = e.context
+      rows.push([e.date, time, 'checkin', '', '', '', '', c?.sleep, c?.stress, c?.hydration, c?.mood ?? '', c?.energy ?? '', c?.func ?? '', conf])
     } else {
-      rows.push([e.date, time, 'day_confirm', '', '', '', '', '', '', 'yes'])
+      rows.push([e.date, time, 'day_confirm', '', '', '', '', '', '', '', '', '', '', 'yes'])
     }
   }
   return toCSV(rows)
