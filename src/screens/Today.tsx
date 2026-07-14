@@ -36,7 +36,71 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     load()
   }, [load])
 
-  if (!day) return <div className="screen" />
+  // The alt-activity sheet works with or without a scheduled day: a pushed-away
+  // or skipped day must never be a dead end.
+  const altSheet = altOpen && (
+    <Sheet
+      title={altId ? `Log ${defFor(altId).name}` : 'What did you do instead?'}
+      onClose={() => { setAltOpen(false); setAltId(null); setAltQty('') }}
+    >
+      {!altId ? (
+        allExercises().filter((e) => e.kind === 'activity').map((e) => (
+          <button key={e.id} className="swap-option" onClick={() => { setAltId(e.id); setAltQty(String(e.defaultQuantity ?? '')) }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>{e.name}</div>
+            <div className="tiny" style={{ marginTop: 2 }}>logged in {e.unit}</div>
+          </button>
+        ))
+      ) : (
+        <>
+          <div className="field">
+            <label>How much? ({defFor(altId).unit})</label>
+            <input
+              className="input"
+              inputMode="decimal"
+              value={altQty}
+              onChange={(e) => setAltQty(e.target.value)}
+            />
+          </div>
+          {day?.status === 'pending' ? (
+            <>
+              <p className="tiny" style={{ marginBottom: 10 }}>
+                What happens to today's planned workout?
+              </p>
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={() => onLogAlt('push')}>Do it tomorrow</button>
+                <button className="btn btn-secondary" onClick={() => onLogAlt('replace')}>Drop it</button>
+              </div>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={() => onLogAlt('replace')}>Log it for today</button>
+          )}
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setAltId(null)}>
+            ← Pick a different activity
+          </button>
+        </>
+      )}
+    </Sheet>
+  )
+
+  if (!day) {
+    // The plan was pushed forward past today — an open day, not a blank void.
+    return (
+      <div className="screen">
+        <div className="screen-title">Today</div>
+        <div className="screen-sub">{prettyToday()}</div>
+        <div className="card-hero">
+          <div className="eyebrow">Open day</div>
+          <div className="hero-title">Nothing scheduled</div>
+          <div className="hero-sub">The plan moved to tomorrow. Recover well — or log what you did instead.</div>
+        </div>
+        <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => setAltOpen(true)}>
+          Did something else? Log it…
+        </button>
+        {altSheet}
+        <Toast msg={toast} />
+      </div>
+    )
+  }
 
   const isRest = day.templateKey === 'rest'
   const pending = day.status === 'pending'
@@ -233,6 +297,12 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
         </div>
       )}
 
+      {day.status === 'skipped' && (
+        <button className="btn btn-ghost" style={{ marginTop: 16 }} onClick={() => setAltOpen(true)}>
+          Did something else? Log it instead…
+        </button>
+      )}
+
       {swapIndex != null && day.blocks[swapIndex] && (
         <Sheet title={`Swap “${day.blocks[swapIndex].name}” for…`} onClose={() => setSwapIndex(null)}>
           {swapsFor(day.blocks[swapIndex].exerciseId).map((alt) => (
@@ -247,43 +317,7 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
         </Sheet>
       )}
 
-      {altOpen && (
-        <Sheet
-          title={altId ? `Log ${defFor(altId).name}` : 'What did you do instead?'}
-          onClose={() => { setAltOpen(false); setAltId(null); setAltQty('') }}
-        >
-          {!altId ? (
-            allExercises().filter((e) => e.kind === 'activity').map((e) => (
-              <button key={e.id} className="swap-option" onClick={() => { setAltId(e.id); setAltQty(String(e.defaultQuantity ?? '')) }}>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{e.name}</div>
-                <div className="tiny" style={{ marginTop: 2 }}>logged in {e.unit}</div>
-              </button>
-            ))
-          ) : (
-            <>
-              <div className="field">
-                <label>How much? ({defFor(altId).unit})</label>
-                <input
-                  className="input"
-                  inputMode="decimal"
-                  value={altQty}
-                  onChange={(e) => setAltQty(e.target.value)}
-                />
-              </div>
-              <p className="tiny" style={{ marginBottom: 10 }}>
-                What happens to today's planned workout?
-              </p>
-              <div className="btn-row">
-                <button className="btn btn-primary" onClick={() => onLogAlt('push')}>Do it tomorrow</button>
-                <button className="btn btn-secondary" onClick={() => onLogAlt('replace')}>Drop it</button>
-              </div>
-              <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setAltId(null)}>
-                ← Pick a different activity
-              </button>
-            </>
-          )}
-        </Sheet>
-      )}
+      {altSheet}
 
       {timerIndex != null && day.blocks[timerIndex] && (
         <TimerOverlay
