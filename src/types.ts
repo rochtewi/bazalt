@@ -10,6 +10,19 @@ export interface Profile {
   programStart: string // ISO date the program was anchored
   createdAt: string
   equipment?: Equipment[] // owned equipment; defaults applied on migration
+  gear?: Gear // weight inventory; defaults applied on first load
+}
+
+/**
+ * The weights the user actually owns. Targets are only ever prescribed as
+ * loads buildable from this inventory — no more impossible plate math.
+ */
+export interface Gear {
+  barWeight: number // main barbell, in profile units
+  ezBarWeight: number // EZ / specialty bar, if owned
+  platePairs: Record<string, number> // plate weight -> pairs owned ('45' -> 2)
+  dumbbells: number[] // per-hand dumbbell weights owned
+  kettlebells: number[] // kettlebell weights owned
 }
 
 export interface BodyMetric {
@@ -131,6 +144,7 @@ export interface WorkoutBlock {
   quantity?: number // planned activity quantity
   actualQuantity?: number // logged activity quantity
   swappedFrom?: string
+  lastSummary?: string // what was logged last time this exercise was completed
 }
 
 export interface ScheduledDay {
@@ -146,6 +160,7 @@ export interface ScheduledDay {
   deload?: boolean
   custom?: boolean
   completedAt?: string
+  programIndex?: number // position in the program rotation; lets pending days rebuild deterministically
 }
 
 // Per-exercise progression memory
@@ -157,6 +172,7 @@ export interface ExerciseState {
   seconds: number | null // timed
   timesCompleted: number
   updatedAt: string
+  lastSummary?: string // human-readable log of the last completed session
 }
 
 export interface MetaEntry {

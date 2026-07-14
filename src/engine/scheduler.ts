@@ -1,8 +1,8 @@
 import { db, addDays, getMeta, setMeta, today } from '../db'
-import { templateForIndex, WEEK_TEMPLATE, type DayTemplate } from './program'
-import { defFor, hasSauna } from '../data/library'
+import { templateForIndex, type DayTemplate } from './program'
+import { availableExercises, canDo, defFor, hasSauna } from '../data/library'
 import { advance, buildSets, freshState } from './progression'
-import type { CustomWorkout, Profile, ScheduledDay, WorkoutBlock } from '../types'
+import type { CustomWorkout, ExerciseDef, Profile, ScheduledDay, WorkoutBlock } from '../types'
 
 const HORIZON_DAYS = 28
 const DELOAD_EVERY_N_WEEKS = 6
@@ -20,11 +20,28 @@ function isDeloadWeek(dayCursor: number): boolean {
   return weekIndex % DELOAD_EVERY_N_WEEKS === DELOAD_EVERY_N_WEEKS - 1
 }
 
-async function materializeDay(date: string, template: DayTemplate, deload: boolean): Promise<ScheduledDay> {
+/**
+ * A scheduled exercise must be doable with the owned equipment. When it
+ * isn't (no EZ bar, no dip bars...), substitute the best same-pattern
+ * alternative the user CAN do — same kind first, library order for
+ * determinism. This is what keeps the program honest about your gear.
+ */
+function resolveExerciseId(id: string): string {
+  const def = defFor(id)
+  if (canDo(def)) return id
+  const candidates = availableExercises().filter(
+    (e) => e.pattern === def.pattern && e.kind !== 'activity' && e.id !== id,
+  )
+  const pick: ExerciseDef | undefined =
+    candidates.find((e) => e.kind === def.kind) ?? candidates[0]
+  return pick ? pick.id : id
+}
+
+async function materializeDay(date: string, template: DayTemplate, deload: boolean, programIndex: number): Promise<ScheduledDay> {
   const blocks: WorkoutBlock[] = []
   for (const ex of template.exercises) {
-    const def = defFor(ex.id)
-    const state = await stateFor(ex.id)
+    const def = defFor(resolveExerciseId(ex.id))
+    const state = await stateFor(def.id)
     const setCount = deload ? Math.max(2, ex.sets - 1) : ex.sets
     blocks.push({
       exerciseId: def.id,
@@ -36,6 +53,7 @@ async function materializeDay(date: string, template: DayTemplate, deload: boole
       rounds: deload ? Math.max(3, (state.rounds ?? def.rounds ?? 6) - 2) : (state.rounds ?? def.rounds),
       workSeconds: def.workSeconds,
       restSeconds: def.restSeconds,
+      lastSummary: state.lastSummary,
     })
   }
   return {
@@ -48,6 +66,7 @@ async function materializeDay(date: string, template: DayTemplate, deload: boole
     saunaDone: false,
     blocks,
     deload: deload && template.key !== 'rest' ? true : undefined,
+    programIndex,
   }
 }
 
@@ -67,7 +86,7 @@ export async function ensureSchedule(profile: Profile): Promise<void> {
 
   const rows: ScheduledDay[] = []
   while (nextDate <= end) {
-    rows.push(await materializeDay(nextDate, templateForIndex(cursor, profile.daysPerWeek), isDeloadWeek(cursor)))
+    rows.push(await materializeDay(nextDate, templateForIndex(cursor, profile.daysPerWeek), isDeloadWeek(cursor), cursor))
     cursor++
     nextDate = addDays(nextDate, 1)
   }
@@ -77,28 +96,65 @@ export async function ensureSchedule(profile: Profile): Promise<void> {
   }
 }
 
-/**
- * When an app update changes the weekly template (new exercises in the
- * program), rebuild pending untouched days so the change shows up this week
- * instead of after the 4-week horizon rolls over.
- */
-const TEMPLATE_VERSION = '2'
+function isUntouched(d: ScheduledDay): boolean {
+  return d.blocks.every(
+    (b) => b.status === 'pending' && b.sets.every((s) => !s.done && s.actualReps == null && s.actualWeight == null),
+  )
+}
 
-export async function migrateTemplates(): Promise<void> {
-  const v = await getMeta('templateVersion')
-  if (v === TEMPLATE_VERSION) return
+/**
+ * Rebuild every pending, untouched, non-custom day from its stored program
+ * position. Called after equipment or gear changes so unowned exercises and
+ * impossible weights disappear from the plan immediately.
+ */
+export async function rebuildPendingDays(profile: Profile): Promise<void> {
   const upcoming = await db.schedule.where('date').aboveOrEqual(today()).toArray()
   for (const d of upcoming) {
-    if (d.status !== 'pending' || d.custom || d.templateKey === 'rest') continue
-    const untouched = d.blocks.every(
-      (b) => b.status === 'pending' && b.sets.every((s) => !s.done && s.actualReps == null && s.actualWeight == null),
-    )
-    if (!untouched) continue
-    const template = WEEK_TEMPLATE.find((t) => t.key === d.templateKey)
-    if (!template) continue
-    const fresh = await materializeDay(d.date, template, !!d.deload)
-    await db.schedule.update(d.id!, { blocks: fresh.blocks, focus: fresh.focus })
+    if (d.status !== 'pending' || d.custom || d.programIndex == null || !isUntouched(d)) continue
+    const fresh = await materializeDay(d.date, templateForIndex(d.programIndex, profile.daysPerWeek), isDeloadWeek(d.programIndex), d.programIndex)
+    await db.schedule.update(d.id!, {
+      templateKey: fresh.templateKey,
+      title: fresh.title,
+      focus: fresh.focus,
+      sauna: fresh.sauna,
+      blocks: fresh.blocks,
+      deload: fresh.deload,
+    })
   }
+}
+
+/**
+ * When an app update changes the program itself, rebuild the pending plan.
+ * v3 replaced the single repeating week with a 4-week cycle: every pending
+ * untouched day gets a fresh position in the new rotation, starting the
+ * cycle over from the first affected day.
+ */
+const TEMPLATE_VERSION = '3'
+
+export async function migrateTemplates(profile: Profile): Promise<void> {
+  const v = await getMeta('templateVersion')
+  if (v === TEMPLATE_VERSION) return
+  const upcoming = await db.schedule.where('date').aboveOrEqual(today()).sortBy('date')
+  let index = 0
+  for (const d of upcoming) {
+    if (d.status !== 'pending') continue
+    const assigned = index++
+    if (d.custom || !isUntouched(d)) {
+      await db.schedule.update(d.id!, { programIndex: assigned })
+      continue
+    }
+    const fresh = await materializeDay(d.date, templateForIndex(assigned, profile.daysPerWeek), isDeloadWeek(assigned), assigned)
+    await db.schedule.update(d.id!, {
+      templateKey: fresh.templateKey,
+      title: fresh.title,
+      focus: fresh.focus,
+      sauna: fresh.sauna,
+      blocks: fresh.blocks,
+      deload: fresh.deload,
+      programIndex: assigned,
+    })
+  }
+  await setMeta('programCursor', String(index))
   await setMeta('templateVersion', TEMPLATE_VERSION)
 }
 
@@ -122,6 +178,7 @@ export async function refreshTargets(day: ScheduledDay): Promise<ScheduledDay> {
       sets: buildSets(def, state, b.sets.length, { deload: day.deload }),
       seconds: state.seconds ?? def.seconds,
       rounds: b.rounds != null ? (day.deload ? b.rounds : (state.rounds ?? def.rounds)) : undefined,
+      lastSummary: state.lastSummary,
     })
   }
   const updated = { ...day, blocks }
@@ -197,10 +254,56 @@ export async function swapBlock(day: ScheduledDay, blockIndex: number, newExerci
     unit: def.unit,
     quantity: def.defaultQuantity,
     swappedFrom: old.swappedFrom ?? old.name,
+    lastSummary: state.lastSummary,
   }
   const updated = { ...day, blocks }
   await db.schedule.update(day.id!, { blocks })
   return updated
+}
+
+/**
+ * "I did something else today": log an arbitrary activity as the day's
+ * completed workout. 'replace' drops the planned session; 'push' shifts the
+ * whole pending plan a day later first, so nothing is lost.
+ */
+export async function logActivityDay(
+  date: string,
+  exerciseId: string,
+  quantity: number,
+  mode: 'replace' | 'push',
+): Promise<void> {
+  const def = defFor(exerciseId)
+  const block: WorkoutBlock = {
+    exerciseId: def.id,
+    name: def.name,
+    kind: 'activity',
+    status: 'done',
+    sets: [],
+    unit: def.unit,
+    quantity: def.defaultQuantity,
+    actualQuantity: quantity,
+  }
+  const dayFields = {
+    templateKey: 'custom',
+    title: def.name,
+    focus: 'Logged instead of the planned workout',
+    status: 'completed' as const,
+    sauna: false,
+    saunaDone: false,
+    blocks: [block],
+    deload: undefined,
+    custom: true,
+    completedAt: new Date().toISOString(),
+    programIndex: undefined,
+  }
+  if (mode === 'push') {
+    await pushDay(date)
+    await db.schedule.add({ date, ...dayFields })
+  } else {
+    const existing = await getDay(date)
+    if (existing?.id) await db.schedule.update(existing.id, dayFields)
+    else await db.schedule.add({ date, ...dayFields })
+  }
 }
 
 /** Build the blocks for a custom workout from its items. */

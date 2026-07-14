@@ -5,7 +5,9 @@ import { Toast, useToast } from '../components/useToast'
 import { downloadBackup, exportBackup, importBackup } from '../backup'
 import { hasSauna } from '../data/library'
 import EquipmentManager from '../components/EquipmentManager'
+import GearManager from '../components/GearManager'
 import WorkoutManager from '../components/WorkoutManager'
+import { buildDailySummaryCSV, buildWorkoutCSV, downloadCSV, type ExportRange } from '../export'
 import type { Profile } from '../types'
 
 export default function SettingsScreen({ profile, onProfileChange }: { profile: Profile; onProfileChange: () => void }) {
@@ -19,6 +21,7 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
   const [confirmReset, setConfirmReset] = useState(false)
   const [restoreText, setRestoreText] = useState('')
   const [showRestore, setShowRestore] = useState(false)
+  const [range, setRange] = useState<ExportRange>(90)
   const [toast, showToast] = useToast()
 
   useEffect(() => {
@@ -125,6 +128,7 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
       </div>
 
       <EquipmentManager profile={profile} onChanged={onProfileChange} notify={showToast} />
+      <GearManager profile={profile} onChanged={onProfileChange} notify={showToast} />
       <WorkoutManager notify={showToast} />
 
       <div className="card">
@@ -171,6 +175,42 @@ export default function SettingsScreen({ profile, onProfileChange }: { profile: 
           Calendar — works with zero internet.
         </p>
         <button className="btn btn-secondary" onClick={exportCal}>Export 4-week calendar (.ics)</button>
+      </div>
+
+      <div className="card">
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>Export for Excel</div>
+        <p className="tiny" style={{ marginBottom: 10 }}>
+          Download your logs as CSV files — they open directly in Excel, Numbers, or Google Sheets
+          for your own analysis.
+        </p>
+        <div className="field">
+          <label>Date range</label>
+          <div className="seg">
+            <button className={range === 30 ? 'on' : ''} onClick={() => setRange(30)}>30 days</button>
+            <button className={range === 90 ? 'on' : ''} onClick={() => setRange(90)}>90 days</button>
+            <button className={range === 'all' ? 'on' : ''} onClick={() => setRange('all')}>Everything</button>
+          </div>
+        </div>
+        <div className="btn-row">
+          <button
+            className="btn btn-secondary"
+            onClick={async () => {
+              downloadCSV(await buildWorkoutCSV(range, profile.unit), 'bazalt-workouts')
+              showToast('Workout log exported')
+            }}
+          >
+            Workout log
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={async () => {
+              downloadCSV(await buildDailySummaryCSV(range, profile), 'bazalt-daily')
+              showToast('Daily summary exported')
+            }}
+          >
+            Daily summary
+          </button>
+        </div>
       </div>
 
       <div className="card">

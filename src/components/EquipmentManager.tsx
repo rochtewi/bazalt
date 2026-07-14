@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { db } from '../db'
 import { EQUIPMENT_LABELS } from '../data/exercises'
 import { allExercises, loadLibrary, owned } from '../data/library'
+import { rebuildPendingDays } from '../engine/scheduler'
 import Sheet from './Sheet'
 import type { Equipment, ExerciseDef, MovementPattern, Profile } from '../types'
 
@@ -54,8 +55,11 @@ export default function EquipmentManager({
     const equipment: Equipment[] = [...selected.filter((e) => e !== 'bodyweight'), 'bodyweight']
     await db.profile.update('me', { equipment })
     await loadLibrary()
+    // The plan must never prescribe gear you don't own — rebuild it now.
+    const p = (await db.profile.get('me'))!
+    await rebuildPendingDays(p)
     onChanged()
-    notify('Equipment saved — swaps and future workouts updated')
+    notify('Equipment saved — your plan now only uses what you own')
   }
 
   async function addCustom() {

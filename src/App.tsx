@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { db, seedPresets } from './db'
 import { loadLibrary } from './data/library'
 import { ensureSchedule, migrateTemplates } from './engine/scheduler'
+import { DEFAULT_GEAR, initGear } from './engine/loads'
 import type { Profile } from './types'
 import Onboarding from './screens/Onboarding'
 import TodayScreen from './screens/Today'
@@ -26,10 +27,16 @@ export default function App() {
   const load = useCallback(async () => {
     await loadLibrary()
     await seedPresets()
-    const p = await db.profile.get('me')
+    let p = await db.profile.get('me')
     if (p) {
+      if (!p.gear) {
+        // Existing installs get the default inventory; edited in Profile.
+        await db.profile.update('me', { gear: DEFAULT_GEAR })
+        p = { ...p, gear: DEFAULT_GEAR }
+      }
+      initGear(p.gear)
       await ensureSchedule(p)
-      await migrateTemplates()
+      await migrateTemplates(p)
       setProfile(p)
     } else {
       setProfile(null)

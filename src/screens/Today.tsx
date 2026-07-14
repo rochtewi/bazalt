@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { today } from '../db'
-import { completeDay, getDay, pushDay, refreshTargets, skipDay, swapBlock } from '../engine/scheduler'
-import { defFor, hasSauna, swapsFor } from '../data/library'
+import { completeDay, getDay, logActivityDay, pushDay, refreshTargets, skipDay, swapBlock } from '../engine/scheduler'
+import { allExercises, defFor, hasSauna, swapsFor } from '../data/library'
 import { Toast, useToast } from '../components/useToast'
 import TimerOverlay from '../components/TimerOverlay'
 import Sheet from '../components/Sheet'
@@ -19,6 +19,9 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
   const [day, setDay] = useState<ScheduledDay | null>(null)
   const [swapIndex, setSwapIndex] = useState<number | null>(null)
   const [timerIndex, setTimerIndex] = useState<number | null>(null)
+  const [altOpen, setAltOpen] = useState(false)
+  const [altId, setAltId] = useState<string | null>(null)
+  const [altQty, setAltQty] = useState('')
   const [toast, showToast] = useToast()
 
   const load = useCallback(async () => {
@@ -137,6 +140,19 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
     })
   }
 
+  async function onLogAlt(mode: 'replace' | 'push') {
+    if (!altId) return
+    const def = defFor(altId)
+    const qty = Number(altQty) || def.defaultQuantity || 0
+    if (qty <= 0) return
+    await logActivityDay(today(), altId, qty, mode)
+    setAltOpen(false)
+    setAltId(null)
+    setAltQty('')
+    await load()
+    showToast(mode === 'push' ? `${def.name} logged — plan moved to tomorrow.` : `${def.name} logged for today.`)
+  }
+
   const doneBlocks = day.blocks.filter((b) => b.status === 'done').length
 
   return (
@@ -211,6 +227,9 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
               <button className="btn btn-danger" onClick={onSkip}>Skip today</button>
             )}
           </div>
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setAltOpen(true)}>
+            Did something else? Log it instead…
+          </button>
         </div>
       )}
 
@@ -224,6 +243,44 @@ export default function TodayScreen({ profile }: { profile: Profile }) {
           ))}
           {swapsFor(day.blocks[swapIndex].exerciseId).length === 0 && (
             <div className="muted">No same-pattern alternative available with your equipment.</div>
+          )}
+        </Sheet>
+      )}
+
+      {altOpen && (
+        <Sheet
+          title={altId ? `Log ${defFor(altId).name}` : 'What did you do instead?'}
+          onClose={() => { setAltOpen(false); setAltId(null); setAltQty('') }}
+        >
+          {!altId ? (
+            allExercises().filter((e) => e.kind === 'activity').map((e) => (
+              <button key={e.id} className="swap-option" onClick={() => { setAltId(e.id); setAltQty(String(e.defaultQuantity ?? '')) }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{e.name}</div>
+                <div className="tiny" style={{ marginTop: 2 }}>logged in {e.unit}</div>
+              </button>
+            ))
+          ) : (
+            <>
+              <div className="field">
+                <label>How much? ({defFor(altId).unit})</label>
+                <input
+                  className="input"
+                  inputMode="decimal"
+                  value={altQty}
+                  onChange={(e) => setAltQty(e.target.value)}
+                />
+              </div>
+              <p className="tiny" style={{ marginBottom: 10 }}>
+                What happens to today's planned workout?
+              </p>
+              <div className="btn-row">
+                <button className="btn btn-primary" onClick={() => onLogAlt('push')}>Do it tomorrow</button>
+                <button className="btn btn-secondary" onClick={() => onLogAlt('replace')}>Drop it</button>
+              </div>
+              <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setAltId(null)}>
+                ← Pick a different activity
+              </button>
+            </>
           )}
         </Sheet>
       )}
@@ -294,6 +351,7 @@ function BlockCard({
             {block.name} {block.status === 'done' && <span style={{ color: 'var(--green)' }}>✓</span>}
           </div>
           <div className="block-target">{targetLine}</div>
+          {block.lastSummary && editable && <div className="tiny">last time: {block.lastSummary}</div>}
           {block.swappedFrom && <div className="tiny">swapped from {block.swappedFrom}</div>}
         </div>
         {editable && (
