@@ -24,24 +24,30 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   // undefined = loading, null = needs onboarding
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('today')
 
   const load = useCallback(async () => {
-    await loadLibrary()
-    await seedPresets()
-    let p = await db.profile.get('me')
-    if (p) {
-      if (!p.gear) {
-        // Existing installs get the default inventory; edited in Profile.
-        await db.profile.update('me', { gear: DEFAULT_GEAR })
-        p = { ...p, gear: DEFAULT_GEAR }
+    try {
+      await loadLibrary()
+      await seedPresets()
+      let p = await db.profile.get('me')
+      if (p) {
+        if (!p.gear) {
+          // Existing installs get the default inventory; edited in Profile.
+          await db.profile.update('me', { gear: DEFAULT_GEAR })
+          p = { ...p, gear: DEFAULT_GEAR }
+        }
+        initGear(p.gear)
+        await ensureSchedule(p)
+        await migrateTemplates(p)
+        setProfile(p)
+      } else {
+        setProfile(null)
       }
-      initGear(p.gear)
-      await ensureSchedule(p)
-      await migrateTemplates(p)
-      setProfile(p)
-    } else {
-      setProfile(null)
+    } catch (e) {
+      // A failed startup must never strand the user on a blank screen.
+      setLoadError(e instanceof Error ? `${e.name}: ${e.message}` : String(e))
     }
   }, [])
 
@@ -49,6 +55,16 @@ export default function App() {
     load()
   }, [load])
 
+  if (loadError) {
+    return (
+      <div className="screen" style={{ padding: 24 }}>
+        <div className="screen-title">Couldn't start up</div>
+        <p className="muted" style={{ margin: '10px 0' }}>Your data is safe. The startup error was:</p>
+        <div className="code-box" style={{ marginBottom: 14 }}>{loadError}</div>
+        <button className="btn btn-primary" onClick={() => window.location.reload()}>Try again</button>
+      </div>
+    )
+  }
   if (profile === undefined) return null
   if (profile === null) return <Onboarding onDone={load} />
 

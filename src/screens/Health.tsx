@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { db, isoDate, today } from '../db'
 import { loadHealthLists, labelFor, LOCATION_SYMPTOMS, type HealthLists } from '../health/lists'
+import Trends from '../health/Trends'
+import ListEditor from '../health/ListEditor'
 import Sheet from '../components/Sheet'
 import { Toast, useToast } from '../components/useToast'
 import type { HealthEvent, Severity } from '../types'
@@ -58,11 +60,12 @@ const TYPE_LABEL: Record<HealthEvent['type'], string> = {
 }
 
 export default function HealthScreen() {
-  const [view, setView] = useState<'log' | 'history'>('log')
+  const [view, setView] = useState<'log' | 'trends' | 'history'>('log')
   const [lists, setLists] = useState<HealthLists | null>(null)
   const [events, setEvents] = useState<HealthEvent[]>([])
   const [sheet, setSheet] = useState<SheetKind | null>(null)
   const [editing, setEditing] = useState<HealthEvent | null>(null)
+  const [editingLists, setEditingLists] = useState(false)
   const [toast, showToast] = useToast()
 
   const load = useCallback(async () => {
@@ -121,6 +124,7 @@ export default function HealthScreen() {
 
       <div className="seg" style={{ marginBottom: 14 }}>
         <button className={view === 'log' ? 'on' : ''} onClick={() => setView('log')}>Log</button>
+        <button className={view === 'trends' ? 'on' : ''} onClick={() => setView('trends')}>Trends</button>
         <button className={view === 'history' ? 'on' : ''} onClick={() => setView('history')}>History</button>
       </div>
 
@@ -161,8 +165,13 @@ export default function HealthScreen() {
             Confirmed days are the only ones that count as truly symptom-free in your data.
             {confirmedCount > 0 && <> Confirmed so far: <b>{confirmedCount}</b>.</>}
           </p>
+          <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => setEditingLists(true)}>
+            Customize ingredients & symptoms…
+          </button>
         </>
       )}
+
+      {view === 'trends' && <Trends events={events} lists={lists} />}
 
       {view === 'history' && (
         <HistoryList events={events} lists={lists} onEdit={openEdit} />
@@ -193,6 +202,9 @@ export default function HealthScreen() {
           onDelete={deleteEvent}
           onClose={() => { setSheet(null); setEditing(null) }}
         />
+      )}
+      {editingLists && (
+        <ListEditor lists={lists} onChanged={setLists} onClose={() => setEditingLists(false)} />
       )}
 
       <Toast msg={toast} />
